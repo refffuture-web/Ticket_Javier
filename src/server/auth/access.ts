@@ -26,6 +26,7 @@ export function areaForPath(pathname: string): Area | "public" | "admin" {
   if (pathname === "/api/health") return "public";
   if (pathname.startsWith("/api/webhooks/")) return "public";
   if (pathname.startsWith("/api/cron/")) return "public";
+  if (pathname.startsWith("/api/media/")) return "public";
   if (pathname === "/admin" || pathname.startsWith("/admin/")) return "admin";
   if (pathname === "/boleteria" || pathname.startsWith("/boleteria/")) return "boleteria";
   if (pathname === "/validar" || pathname.startsWith("/validar/")) return "validar";

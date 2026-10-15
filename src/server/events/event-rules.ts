@@ -29,6 +29,36 @@ export function isEditableStatus(status: EventStatusName): boolean {
   return status === "BORRADOR" || status === "PUBLICADO";
 }
 
+export function availableSeats(
+  capacity: number,
+  soldCount: number,
+  reservedCount: number,
+): number {
+  return Math.max(0, capacity - soldCount - reservedCount);
+}
+
+export type PublicSale = "disponible" | "agotado" | "proximamente" | "finalizada";
+
+export function publicSale(input: {
+  capacity: number;
+  soldCount: number;
+  reservedCount: number;
+  saleStartsAt: Date | null;
+  saleEndsAt: Date | null;
+  now: Date;
+}): PublicSale {
+  if (availableSeats(input.capacity, input.soldCount, input.reservedCount) === 0) {
+    return "agotado";
+  }
+  if (input.saleStartsAt && input.now.getTime() < input.saleStartsAt.getTime()) {
+    return "proximamente";
+  }
+  if (input.saleEndsAt && input.now.getTime() >= input.saleEndsAt.getTime()) {
+    return "finalizada";
+  }
+  return "disponible";
+}
+
 export function publishBlocker(activeTicketTypes: number): string | null {
   if (activeTicketTypes < 1) {
     return "Agregá al menos un tipo de entrada activo antes de publicar.";

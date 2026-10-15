@@ -1,8 +1,10 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  availableSeats,
   canTransition,
   capacityChangeError,
+  publicSale,
   publishBlocker,
   slugify,
   ticketTypeBoundsError,
@@ -41,5 +43,50 @@ describe("reglas de eventos", () => {
         saleEndsAt: null,
       }),
     ).toMatch(/máximo/);
+  });
+
+  it("informa si una entrada se puede ofrecer al público", () => {
+    const now = new Date("2026-06-01T18:00:00.000Z");
+    expect(availableSeats(10, 3, 2)).toBe(5);
+    expect(
+      publicSale({
+        capacity: 10,
+        soldCount: 8,
+        reservedCount: 2,
+        saleStartsAt: null,
+        saleEndsAt: null,
+        now,
+      }),
+    ).toBe("agotado");
+    expect(
+      publicSale({
+        capacity: 10,
+        soldCount: 0,
+        reservedCount: 0,
+        saleStartsAt: new Date("2026-06-02T18:00:00.000Z"),
+        saleEndsAt: null,
+        now,
+      }),
+    ).toBe("proximamente");
+    expect(
+      publicSale({
+        capacity: 10,
+        soldCount: 0,
+        reservedCount: 0,
+        saleStartsAt: null,
+        saleEndsAt: new Date("2026-06-01T18:00:00.000Z"),
+        now,
+      }),
+    ).toBe("finalizada");
+    expect(
+      publicSale({
+        capacity: 10,
+        soldCount: 1,
+        reservedCount: 1,
+        saleStartsAt: null,
+        saleEndsAt: null,
+        now,
+      }),
+    ).toBe("disponible");
   });
 });

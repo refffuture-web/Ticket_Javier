@@ -48,6 +48,7 @@ describe("permisos por rol", () => {
     expect(decideAccess("/api/health", null)).toBe("allow");
     expect(decideAccess("/api/webhooks/mercadopago", null)).toBe("allow");
     expect(decideAccess("/api/cron/expire-orders", null)).toBe("allow");
+    expect(decideAccess("/api/media/cover.jpg", null)).toBe("allow");
     expect(decideAccess("/api/users", "VALIDADOR")).toBe("forbidden");
     expect(decideAccess("/api/users", "ADMIN")).toBe("allow");
     expect(decideAccess("/api/tickets/validate", "VALIDADOR")).toBe("allow");

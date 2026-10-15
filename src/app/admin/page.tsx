@@ -16,7 +16,8 @@ async function AdminHome() {
   await requireArea("admin");
   return (
     <p className="text-sm text-muted-foreground">
-      El armado de eventos está en Eventos. La venta online llega en la fase siguiente.
+      El armado de eventos está en Eventos. El público ya puede ver los publicados en la
+      página de inicio.
     </p>
   );
 }
