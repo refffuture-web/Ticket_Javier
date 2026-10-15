@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import Link from "next/link";
 import QRCode from "qrcode";
 
@@ -14,7 +15,17 @@ import { totpUri } from "@/server/auth/totp";
 import { db } from "@/server/db";
 import { env } from "@/server/env";
 
-export default async function SecurityPage() {
+export const instant = false;
+
+export default function SecurityPage() {
+  return (
+    <Suspense fallback={null}>
+      <SecurityContent />
+    </Suspense>
+  );
+}
+
+async function SecurityContent() {
   const session = await requireArea("admin");
   const user = await db.user.findUnique({ where: { id: session.userId } });
   const secret =

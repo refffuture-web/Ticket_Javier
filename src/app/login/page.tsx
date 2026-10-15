@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { redirect } from "next/navigation";
 
 import { homeForRole } from "@/server/auth/access";
@@ -5,7 +6,27 @@ import { readPendingUserId, getSession } from "@/server/auth/session";
 
 import { PasswordForm, TotpForm } from "./login-form";
 
-export default async function LoginPage({
+export const instant = false;
+
+export default function LoginPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ paso?: string; next?: string }>;
+}) {
+  return (
+    <Suspense
+      fallback={
+        <main className="mx-auto flex w-full max-w-md flex-1 flex-col justify-center px-4 py-16">
+          <p className="text-sm text-muted-foreground">Cargando…</p>
+        </main>
+      }
+    >
+      <LoginContent searchParams={searchParams} />
+    </Suspense>
+  );
+}
+
+async function LoginContent({
   searchParams,
 }: {
   searchParams: Promise<{ paso?: string; next?: string }>;

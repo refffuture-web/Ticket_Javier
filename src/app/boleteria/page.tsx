@@ -1,6 +1,18 @@
+import { Suspense } from "react";
+
 import { requireArea } from "@/server/auth/guard";
 
-export default async function BoleteriaPage() {
+export const instant = false;
+
+export default function BoleteriaPage() {
+  return (
+    <Suspense fallback={null}>
+      <BoleteriaHome />
+    </Suspense>
+  );
+}
+
+async function BoleteriaHome() {
   await requireArea("boleteria");
   return (
     <p className="text-sm text-muted-foreground">

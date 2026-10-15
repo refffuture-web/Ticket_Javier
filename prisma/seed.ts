@@ -1,3 +1,4 @@
+import "dotenv/config";
 import { hashPassword, passwordPolicyError } from "../src/server/auth/password";
 import { db } from "../src/server/db";
 import { env } from "../src/server/env";

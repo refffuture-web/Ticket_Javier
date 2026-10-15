@@ -1,6 +1,18 @@
+import { Suspense } from "react";
+
 import { requireArea } from "@/server/auth/guard";
 
-export default async function ValidarPage() {
+export const instant = false;
+
+export default function ValidarPage() {
+  return (
+    <Suspense fallback={null}>
+      <ValidarHome />
+    </Suspense>
+  );
+}
+
+async function ValidarHome() {
   await requireArea("validar");
   return (
     <p className="text-sm text-muted-foreground">

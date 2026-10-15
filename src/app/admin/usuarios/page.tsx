@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import Link from "next/link";
 
 import { Button } from "@/components/ui/button";
@@ -20,7 +21,21 @@ const roleLabel = {
   VALIDADOR: "Validador",
 } as const;
 
-export default async function UsersPage({
+export const instant = false;
+
+export default function UsersPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ aviso?: string }>;
+}) {
+  return (
+    <Suspense fallback={null}>
+      <UsersContent searchParams={searchParams} />
+    </Suspense>
+  );
+}
+
+async function UsersContent({
   searchParams,
 }: {
   searchParams: Promise<{ aviso?: string }>;

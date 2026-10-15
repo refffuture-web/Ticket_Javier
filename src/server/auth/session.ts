@@ -1,6 +1,7 @@
 import { createHash, randomBytes } from "node:crypto";
 
 import { cookies } from "next/headers";
+import { connection } from "next/server";
 
 import { db } from "@/server/db";
 import { env } from "@/server/env";
@@ -36,7 +37,7 @@ function cookieOptions(expires: Date) {
 
 export async function readSessionByToken(
   token: string | undefined,
-  now = new Date(),
+  now: Date,
 ): Promise<{ session: CurrentSession | null; clearCookie: boolean }> {
   if (!token) return { session: null, clearCookie: false };
 
@@ -71,9 +72,10 @@ export async function readSessionByToken(
 }
 
 export async function getSession(): Promise<CurrentSession | null> {
+  await connection();
   const jar = await cookies();
   const token = jar.get(SESSION_COOKIE)?.value;
-  const result = await readSessionByToken(token);
+  const result = await readSessionByToken(token, new Date());
   if (result.clearCookie) jar.delete(SESSION_COOKIE);
   return result.session;
 }
@@ -118,6 +120,7 @@ export async function setPendingLogin(userId: string): Promise<void> {
 }
 
 export async function readPendingUserId(): Promise<string | null> {
+  await connection();
   const jar = await cookies();
   const token = jar.get(PENDING_COOKIE)?.value;
   if (!token) return null;

@@ -11,7 +11,7 @@ export async function proxy(request: NextRequest) {
   }
 
   const token = request.cookies.get(SESSION_COOKIE)?.value;
-  const { session, clearCookie } = await readSessionByToken(token);
+  const { session, clearCookie } = await readSessionByToken(token, new Date());
   const decision = decideAccess(pathname, session?.role ?? null);
   if (decision === "allow") {
     return NextResponse.next();
