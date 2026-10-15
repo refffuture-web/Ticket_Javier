@@ -39,10 +39,22 @@ Si cambian las dependencias, reconstruí la imagen con `docker compose up --buil
 - `pnpm test:e2e` — Playwright (todavía sin flujos; hace falta `pnpm exec playwright install` la primera vez)
 - `pnpm db:generate` — genera el cliente de Prisma
 - `pnpm db:migrate` — aplica migraciones (`prisma migrate deploy`)
+- `pnpm db:seed` — crea el administrador inicial si todavía no existe
+
+## Ingreso del personal
+
+Con Docker, el primer arranque crea un administrador local:
+
+- Email: `admin@boleteria.local`
+- Contraseña: `Cambiame1234`
+
+Esa contraseña es solo para desarrollo. Cambiala en Seguridad apenas entres, y en producción definí `ADMIN_EMAIL` y `ADMIN_INITIAL_PASSWORD` en el entorno de Vercel o Supabase. El seed no pisa un administrador que ya existe.
+
+El ingreso está en `/login`. Si el administrador activó el segundo factor, el login pide un código de 6 dígitos. Un rol que abre una sección ajena ve “Sin permiso”. Las APIs responden 401 sin sesión y 403 con el rol incorrecto.
 
 ## Roles
 
-El control de acceso llega en la Fase 1 y se aplica en el servidor.
+El control de acceso se aplica en el servidor, en cada pantalla y en `src/proxy.ts`.
 
 - **ADMIN:** eventos, entradas, ventas, usuarios, reportes, anulaciones y auditoría.
 - **BOLETERIA:** vende entradas manuales y ve sus propias ventas.
@@ -56,7 +68,7 @@ Están documentadas en [`.env.example`](.env.example). En la Fase 0 son obligato
 
 El esquema inicial está en [`prisma/schema.prisma`](prisma/schema.prisma). Incluye usuarios, sesiones, eventos, lineup, tipos de entrada con cupo vendido y reservado, órdenes, tickets, auditoría, webhooks y un contador para rate limit. La lógica de negocio de cada parte llega en su fase.
 
-Next.js 16 usa [`src/proxy.ts`](src/proxy.ts) en el lugar de `middleware.ts`. Hoy solo define las rutas que la Fase 1 va a proteger.
+Next.js 16 usa [`src/proxy.ts`](src/proxy.ts) en el lugar de `middleware.ts`. Ahí se exige la sesión y el rol antes de entrar a administración, boletería, validación y las APIs internas. Salud, webhooks y el cron quedan afuera de esa compuerta.
 
 La impresión térmica no está implementada. [`src/modules/print/print-service.ts`](src/modules/print/print-service.ts) es un stub y [`src/modules/ticket-render/types.ts`](src/modules/ticket-render/types.ts) describe el ticket sin depender del medio.
 

@@ -27,6 +27,8 @@ services:
       # Solo para desarrollo local. En producción se reemplazan.
       APP_SECRET: local-dev-app-secret-change-before-any-deploy
       QR_SECRET: local-dev-qr-secret-change-before-any-deploy
+      ADMIN_EMAIL: admin@boleteria.local
+      ADMIN_INITIAL_PASSWORD: Cambiame1234
     volumes:
       - .:/app
       - app_node_modules:/app/node_modules

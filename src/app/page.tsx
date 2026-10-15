@@ -6,6 +6,9 @@ export default function Home() {
         Venta y validación de entradas. El panel y la web pública llegan en las próximas
         fases.
       </p>
+      <a href="/login" className="text-sm underline-offset-4 hover:underline">
+        Ingreso del personal
+      </a>
     </main>
   );
 }
