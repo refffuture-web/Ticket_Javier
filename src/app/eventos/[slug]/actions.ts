@@ -8,7 +8,11 @@ import { prismaRateLimitStore } from "@/server/auth/rate-limit-store";
 import { requestContext } from "@/server/auth/request-context";
 import { db } from "@/server/db";
 import { env } from "@/server/env";
-import { createPendingOrder, cancelPendingOrder } from "@/server/orders/service";
+import {
+  createPendingOrder,
+  cancelPendingOrder,
+  expireDueOrders,
+} from "@/server/orders/service";
 import {
   normalizePhone,
   saleLinesError,
@@ -54,6 +58,7 @@ export async function startCheckoutAction(
 
   const eventId = formData.get("eventId");
   if (typeof eventId !== "string") return { error: "El evento no existe." };
+  await expireDueOrders(now);
   const event = await db.event.findUnique({
     where: { id: eventId },
     include: { ticketTypes: { where: { active: true } } },

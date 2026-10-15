@@ -8,7 +8,7 @@ import { requireArea } from "@/server/auth/guard";
 import { requestContext } from "@/server/auth/request-context";
 import { db } from "@/server/db";
 import { sendTicketEmail } from "@/server/mail/send-tickets";
-import { createPaidOrder } from "@/server/orders/service";
+import { createPaidOrder, expireDueOrders } from "@/server/orders/service";
 import {
   normalizePhone,
   saleLinesError,
@@ -40,6 +40,8 @@ export async function sellAtBoxOfficeAction(
 
   const eventId = formData.get("eventId");
   if (typeof eventId !== "string") return { error: "Elegí un evento." };
+  const now = new Date();
+  await expireDueOrders(now);
   const event = await db.event.findUnique({
     where: { id: eventId },
     include: { ticketTypes: { where: { active: true } } },
@@ -47,7 +49,6 @@ export async function sellAtBoxOfficeAction(
   if (!event || event.status !== "PUBLICADO")
     return { error: "El evento no está a la venta." };
 
-  const now = new Date();
   const lines: SaleLineInput[] = event.ticketTypes.map((type) => ({
     ticketTypeId: type.id,
     name: type.name,

@@ -8,6 +8,7 @@ import { CheckoutForm } from "./checkout-form";
 import { formatArs } from "@/lib/money";
 import { formatDateTime } from "@/lib/time";
 import { db } from "@/server/db";
+import { expireDueOrders } from "@/server/orders/service";
 import { availableSeats, publicSale, readArtistLinks } from "@/server/events/event-rules";
 
 export const instant = false;
@@ -37,6 +38,7 @@ async function EventDetail({ params }: { params: Promise<{ slug: string }> }) {
   await connection();
   const { slug } = await params;
   const now = new Date();
+  await expireDueOrders(now);
   const event = await db.event.findUnique({
     where: { slug },
     include: {
