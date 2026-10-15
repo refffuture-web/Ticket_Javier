@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { connection } from "next/server";
 
 import { PublicHeader } from "@/components/public-header";
+import { CheckoutForm } from "./checkout-form";
 import { formatArs } from "@/lib/money";
 import { formatDateTime } from "@/lib/time";
 import { db } from "@/server/db";
@@ -97,9 +98,25 @@ async function EventDetail({ params }: { params: Promise<{ slug: string }> }) {
             })}
           </ul>
         )}
-        <p className="text-sm text-muted-foreground">
-          La compra online todavía no está habilitada.
-        </p>
+        <CheckoutForm
+          eventId={event.id}
+          eventTitle={event.title}
+          tickets={event.ticketTypes.map((type) => ({
+            id: type.id,
+            name: type.name,
+            priceLabel: formatArs(type.priceCents),
+            maxPerOrder: type.maxPerOrder,
+            onSale:
+              publicSale({
+                capacity: type.capacity,
+                soldCount: type.soldCount,
+                reservedCount: type.reservedCount,
+                saleStartsAt: type.saleStartsAt,
+                saleEndsAt: type.saleEndsAt,
+                now,
+              }) === "disponible",
+          }))}
+        />
       </section>
 
       <section className="flex flex-col gap-4">

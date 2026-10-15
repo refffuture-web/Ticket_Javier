@@ -44,8 +44,7 @@ async function Catalog() {
       <div className="flex flex-col gap-2">
         <h1 className="text-3xl font-semibold tracking-tight">Próximos eventos</h1>
         <p className="text-sm text-muted-foreground">
-          Elegí un evento para ver la grilla y las entradas. La compra online llega en la
-          fase siguiente.
+          Elegí un evento para ver la grilla y comprar entradas.
         </p>
       </div>
       {events.length === 0 ? (

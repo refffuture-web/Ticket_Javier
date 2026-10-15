@@ -6,12 +6,14 @@ export function PublicHeader() {
       <Link href="/" className="text-lg font-semibold tracking-tight">
         Boletería
       </Link>
-      <Link
-        href="/login"
-        className="text-sm text-muted-foreground underline-offset-4 hover:underline"
-      >
-        Personal
-      </Link>
+      <nav className="flex gap-4 text-sm text-muted-foreground">
+        <Link href="/privacidad" className="underline-offset-4 hover:underline">
+          Privacidad
+        </Link>
+        <Link href="/login" className="underline-offset-4 hover:underline">
+          Personal
+        </Link>
+      </nav>
     </header>
   );
 }

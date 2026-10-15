@@ -76,7 +76,6 @@ export async function getSession(): Promise<CurrentSession | null> {
   const jar = await cookies();
   const token = jar.get(SESSION_COOKIE)?.value;
   const result = await readSessionByToken(token, new Date());
-  if (result.clearCookie) jar.delete(SESSION_COOKIE);
   return result.session;
 }
 

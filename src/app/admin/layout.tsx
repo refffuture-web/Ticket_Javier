@@ -30,6 +30,9 @@ async function AdminShell({ children }: { children: ReactNode }) {
         <Link href="/admin/eventos" className="underline-offset-4 hover:underline">
           Eventos
         </Link>
+        <Link href="/admin/ventas" className="underline-offset-4 hover:underline">
+          Ventas
+        </Link>
         <Link href="/admin/usuarios" className="underline-offset-4 hover:underline">
           Usuarios
         </Link>

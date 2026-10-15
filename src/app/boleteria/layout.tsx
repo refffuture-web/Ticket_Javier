@@ -7,7 +7,9 @@ export const instant = false;
 
 export default function BoleteriaLayout({ children }: { children: ReactNode }) {
   return (
-    <Suspense fallback={<p className="px-4 py-16 text-sm text-muted-foreground">Cargando…</p>}>
+    <Suspense
+      fallback={<p className="px-4 py-16 text-sm text-muted-foreground">Cargando…</p>}
+    >
       <BoleteriaShell>{children}</BoleteriaShell>
     </Suspense>
   );

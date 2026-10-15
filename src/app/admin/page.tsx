@@ -16,8 +16,8 @@ async function AdminHome() {
   await requireArea("admin");
   return (
     <p className="text-sm text-muted-foreground">
-      El armado de eventos está en Eventos. El público ya puede ver los publicados en la
-      página de inicio.
+      Los eventos publicados se venden en la página de inicio y en Boletería. Las ventas y
+      anulaciones están en Ventas.
     </p>
   );
 }

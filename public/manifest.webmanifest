@@ -1,0 +1,9 @@
+{
+  "name": "Validar entradas",
+  "short_name": "Validar",
+  "start_url": "/validar",
+  "display": "standalone",
+  "lang": "es",
+  "background_color": "#ffffff",
+  "theme_color": "#111111"
+}
