@@ -1,0 +1,233 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  ADMIN
+  BOLETERIA
+  VALIDADOR
+}
+
+enum EventStatus {
+  BORRADOR
+  PUBLICADO
+  FINALIZADO
+  CANCELADO
+}
+
+enum OrderOrigin {
+  ONLINE
+  BOLETERIA
+  CORTESIA
+}
+
+enum OrderStatus {
+  PENDIENTE
+  PAGADA
+  CANCELADA
+  REEMBOLSADA
+  EXPIRADA
+}
+
+enum PaymentMethod {
+  MERCADO_PAGO
+  EFECTIVO
+  TRANSFERENCIA
+  CORTESIA
+}
+
+enum TicketStatus {
+  VALIDO
+  USADO
+  ANULADO
+}
+
+model User {
+  id               String    @id @default(cuid())
+  name             String
+  email            String    @unique
+  passwordHash     String
+  role             Role
+  totpSecretEnc    String?
+  totpEnabled      Boolean   @default(false)
+  active           Boolean   @default(true)
+  failedLoginCount Int       @default(0)
+  lockedUntil      DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  sessions      Session[]
+  auditLogs     AuditLog[]
+  ordersCreated Order[]    @relation("OrderCreatedBy")
+  ticketsUsed   Ticket[]   @relation("TicketUsedBy")
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash String   @unique
+  expiresAt DateTime
+  userAgent String?
+  ip        String?
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+model Event {
+  id            String      @id @default(cuid())
+  slug          String      @unique
+  title         String
+  description   String      @db.Text
+  startsAt      DateTime
+  venue         String
+  coverImageKey String?
+  status        EventStatus @default(BORRADOR)
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  lineup      LineupArtist[]
+  ticketTypes TicketType[]
+  orders      Order[]
+  tickets     Ticket[]
+
+  @@index([status, startsAt])
+}
+
+model LineupArtist {
+  id        String    @id @default(cuid())
+  eventId   String
+  event     Event     @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  name      String
+  photoKey  String?
+  sortOrder Int
+  startsAt  DateTime?
+  links     Json?
+
+  @@index([eventId, sortOrder])
+}
+
+model TicketType {
+  id            String    @id @default(cuid())
+  eventId       String
+  event         Event     @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  name          String
+  priceCents    Int
+  capacity      Int
+  soldCount     Int       @default(0)
+  reservedCount Int       @default(0)
+  maxPerOrder   Int
+  saleStartsAt  DateTime?
+  saleEndsAt    DateTime?
+  active        Boolean   @default(true)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  orderItems OrderItem[]
+  tickets    Ticket[]
+
+  @@index([eventId, active])
+}
+
+model Order {
+  id            String        @id @default(cuid())
+  eventId       String
+  event         Event         @relation(fields: [eventId], references: [id], onDelete: Restrict)
+  buyerName     String
+  buyerEmail    String
+  buyerPhone    String
+  origin        OrderOrigin
+  paymentMethod PaymentMethod
+  status        OrderStatus   @default(PENDIENTE)
+  totalCents    Int
+  mpPaymentId   String?       @unique
+  expiresAt     DateTime?
+  createdById   String?
+  createdBy     User?         @relation("OrderCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  items   OrderItem[]
+  tickets Ticket[]
+
+  @@index([status, expiresAt])
+  @@index([eventId, status])
+  @@index([createdById])
+}
+
+model OrderItem {
+  id             String     @id @default(cuid())
+  orderId        String
+  order          Order      @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  ticketTypeId   String
+  ticketType     TicketType @relation(fields: [ticketTypeId], references: [id], onDelete: Restrict)
+  quantity       Int
+  unitPriceCents Int
+
+  @@unique([orderId, ticketTypeId])
+  @@index([ticketTypeId])
+}
+
+model Ticket {
+  id           String       @id @default(uuid())
+  shortCode    String       @unique
+  orderId      String
+  order        Order        @relation(fields: [orderId], references: [id], onDelete: Restrict)
+  ticketTypeId String
+  ticketType   TicketType   @relation(fields: [ticketTypeId], references: [id], onDelete: Restrict)
+  eventId      String
+  event        Event        @relation(fields: [eventId], references: [id], onDelete: Restrict)
+  status       TicketStatus @default(VALIDO)
+  usedAt       DateTime?
+  usedById     String?
+  usedBy       User?        @relation("TicketUsedBy", fields: [usedById], references: [id], onDelete: Restrict)
+  printCount   Int          @default(0)
+  voidReason   String?
+  voidedAt     DateTime?
+  createdAt    DateTime     @default(now())
+
+  @@index([eventId, status])
+  @@index([orderId])
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  action    String
+  entity    String
+  entityId  String?
+  metadata  Json?
+  ip        String?
+  createdAt DateTime @default(now())
+
+  @@index([entity, entityId])
+  @@index([userId, createdAt])
+  @@index([createdAt])
+}
+
+model WebhookEvent {
+  id          String    @id @default(cuid())
+  externalId  String    @unique
+  topic       String?
+  payload     Json
+  processedAt DateTime?
+  createdAt   DateTime  @default(now())
+
+  @@index([processedAt])
+}
+
+model RateLimitBucket {
+  key         String
+  windowStart DateTime
+  count       Int      @default(0)
+
+  @@id([key, windowStart])
+  @@index([windowStart])
+}

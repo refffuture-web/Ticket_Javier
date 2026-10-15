@@ -4,3 +4,5 @@ coverage
 pnpm-lock.yaml
 public
 data
+.env.example
+prisma/migrations
