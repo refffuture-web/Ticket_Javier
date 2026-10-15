@@ -1,11 +1,22 @@
+import { Suspense } from "react";
+
 import { requireArea } from "@/server/auth/guard";
 
-export default async function AdminPage() {
+export const instant = false;
+
+export default function AdminPage() {
+  return (
+    <Suspense fallback={null}>
+      <AdminHome />
+    </Suspense>
+  );
+}
+
+async function AdminHome() {
   await requireArea("admin");
   return (
     <p className="text-sm text-muted-foreground">
-      Desde acá vas a gestionar eventos, entradas y reportes. Esos módulos llegan en las
-      próximas fases.
+      El armado de eventos está en Eventos. La venta online llega en la fase siguiente.
     </p>
   );
 }

@@ -1,6 +1,13 @@
 import { describe, expect, it } from "vitest";
 
-import { assertCents, formatArs, lineTotalCents, sumCents } from "./money";
+import {
+  assertCents,
+  formatArs,
+  formatArsInput,
+  lineTotalCents,
+  parseArsToCents,
+  sumCents,
+} from "./money";
 
 describe("dinero en centavos", () => {
   it("calcula el total de una línea sin decimales", () => {
@@ -26,5 +33,15 @@ describe("dinero en centavos", () => {
       ),
     );
     expect(assertCents(-100)).toBe(-100);
+  });
+
+  it("lee un precio escrito con coma decimal", () => {
+    expect(parseArsToCents("1500,50")).toBe(150_050);
+    expect(parseArsToCents("1.500")).toBe(150_000);
+    expect(parseArsToCents("0")).toBe(0);
+    expect(parseArsToCents("1.50")).toBeNull();
+    expect(parseArsToCents("-10")).toBeNull();
+    expect(formatArsInput(150_050)).toBe("1500,50");
+    expect(formatArsInput(150_000)).toBe("1500");
   });
 });

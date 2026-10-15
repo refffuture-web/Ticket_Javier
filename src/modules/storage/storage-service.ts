@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { mkdir, readFile, unlink, writeFile } from "node:fs/promises";
 import path from "node:path";
 
 const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
@@ -17,6 +17,7 @@ export type StoredObject = {
 export interface StorageService {
   save(input: { bytes: Uint8Array; contentType: string }): Promise<StoredObject>;
   read(key: string): Promise<{ bytes: Uint8Array; contentType: string } | null>;
+  delete(key: string): Promise<void>;
 }
 
 export function detectImageType(bytes: Uint8Array): ImageType | null {
@@ -62,8 +63,17 @@ export class LocalStorageService implements StorageService {
     return { key, contentType: detected.contentType };
   }
 
+  async delete(key: string): Promise<void> {
+    if (!isStoredKey(key)) return;
+    try {
+      await unlink(path.join(this.rootDir, key));
+    } catch (error) {
+      if (!isNotFound(error)) throw error;
+    }
+  }
+
   async read(key: string): Promise<{ bytes: Uint8Array; contentType: string } | null> {
-    if (!/^[0-9a-f-]{36}\.(jpg|png|webp)$/i.test(key) || key.includes("..")) {
+    if (!isStoredKey(key)) {
       return null;
     }
     const extension = path.extname(key).slice(1);
@@ -83,6 +93,10 @@ export class LocalStorageService implements StorageService {
       throw error;
     }
   }
+}
+
+function isStoredKey(key: string): boolean {
+  return /^[0-9a-f-]{36}\.(jpg|png|webp)$/i.test(key) && !key.includes("..");
 }
 
 function isNotFound(error: unknown): boolean {

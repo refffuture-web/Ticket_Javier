@@ -30,5 +30,8 @@ describe("almacenamiento local", () => {
     const read = await storage.read(stored.key);
     expect(read?.bytes).toEqual(png);
     expect(await storage.read("../schema.prisma")).toBeNull();
+    await storage.delete(stored.key);
+    expect(await storage.read(stored.key)).toBeNull();
+    await storage.delete("../schema.prisma");
   });
 });
