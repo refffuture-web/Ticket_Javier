@@ -26,12 +26,18 @@ async function AdminShell({ children }: { children: ReactNode }) {
           ? ""
           : " · Te recomendamos activar la autenticación en dos pasos."}
       </p>
-      <nav className="flex gap-4 text-sm">
+      <nav className="flex flex-wrap gap-x-4 gap-y-2 text-sm">
         <Link href="/admin/eventos" className="underline-offset-4 hover:underline">
           Eventos
         </Link>
         <Link href="/admin/ventas" className="underline-offset-4 hover:underline">
           Ventas
+        </Link>
+        <Link href="/admin/ingresos" className="underline-offset-4 hover:underline">
+          Ingresos
+        </Link>
+        <Link href="/admin/contactos" className="underline-offset-4 hover:underline">
+          Contactos
         </Link>
         <Link href="/admin/usuarios" className="underline-offset-4 hover:underline">
           Usuarios

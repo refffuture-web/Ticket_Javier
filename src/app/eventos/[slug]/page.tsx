@@ -3,8 +3,10 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { connection } from "next/server";
 
+import { EventCountdown } from "@/components/event-countdown";
 import { PublicHeader } from "@/components/public-header";
 import { CheckoutForm } from "./checkout-form";
+import { mediaUrl } from "@/lib/media-url";
 import { formatArs } from "@/lib/money";
 import { formatDateTime } from "@/lib/time";
 import { db } from "@/server/db";
@@ -48,22 +50,36 @@ async function EventDetail({ params }: { params: Promise<{ slug: string }> }) {
   });
   if (!event || event.status !== "PUBLICADO") notFound();
 
+  const upcoming = event.startsAt.getTime() >= now.getTime();
+
   return (
-    <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-10 px-4 pb-16">
+    <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-10 px-4 pt-6 pb-16">
       {event.coverImageKey ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img
-          src={`/api/media/${event.coverImageKey}`}
+          src={mediaUrl(event.coverImageKey)!}
           alt=""
-          className="max-h-80 w-full rounded-lg object-cover"
+          className="max-h-80 w-full rounded-2xl object-cover ring-1 ring-black/10"
         />
       ) : null}
-      <div className="flex flex-col gap-2">
-        <h1 className="text-3xl font-semibold tracking-tight">{event.title}</h1>
-        <p className="text-sm text-muted-foreground">
+      <div className="flex flex-col gap-3">
+        <p className="text-xs font-semibold tracking-[0.2em] text-green-800 uppercase">
+          {upcoming ? "En cartelera" : "Finalizado"}
+        </p>
+        <h1 className="text-3xl font-bold tracking-tight text-black sm:text-4xl">
+          {event.title}
+        </h1>
+        <p className="text-sm text-black/70">
           {formatDateTime(event.startsAt)} · {event.venue}
         </p>
-        <p className="whitespace-pre-wrap text-sm">{event.description}</p>
+        {upcoming ? (
+          <EventCountdown
+            startsAt={event.startsAt.toISOString()}
+            variant="hero"
+            surface="light"
+          />
+        ) : null}
+        <p className="whitespace-pre-wrap text-sm text-black/80">{event.description}</p>
       </div>
 
       <section className="flex flex-col gap-4">
@@ -134,7 +150,7 @@ async function EventDetail({ params }: { params: Promise<{ slug: string }> }) {
                   {artist.photoKey ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img
-                      src={`/api/media/${artist.photoKey}`}
+                      src={mediaUrl(artist.photoKey)!}
                       alt=""
                       className="h-16 w-16 rounded-md object-cover"
                     />
@@ -155,7 +171,10 @@ async function EventDetail({ params }: { params: Promise<{ slug: string }> }) {
         )}
       </section>
 
-      <Link href="/" className="text-sm underline-offset-4 hover:underline">
+      <Link
+        href="/"
+        className="w-fit cursor-pointer text-sm font-medium text-green-800 underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-green-800"
+      >
         Volver a los eventos
       </Link>
     </main>

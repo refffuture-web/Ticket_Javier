@@ -29,14 +29,19 @@ export async function sellAtBoxOfficeAction(
   if (!courtesy && method !== "EFECTIVO" && method !== "TRANSFERENCIA") {
     return { error: "Elegí efectivo o transferencia." };
   }
-  const buyer = z
-    .object({
-      name: z.string().trim().min(2).max(80),
-      email: z.email().max(200),
-    })
-    .safeParse({ name: formData.get("buyerName"), email: formData.get("buyerEmail") });
-  const phone = normalizePhone(String(formData.get("buyerPhone") ?? ""));
-  if (!buyer.success || !phone) return { error: "Revisá nombre, email y teléfono." };
+  const rawName = String(formData.get("buyerName") ?? "").trim();
+  const rawEmail = String(formData.get("buyerEmail") ?? "").trim();
+  const rawPhone = String(formData.get("buyerPhone") ?? "").trim();
+  if (rawName.length > 80) return { error: "El nombre es demasiado largo." };
+  if (rawEmail && !z.email().max(200).safeParse(rawEmail).success) {
+    return { error: "El email no es válido." };
+  }
+  const phone = rawPhone ? normalizePhone(rawPhone) : "";
+  if (phone === null) return { error: "El teléfono no es válido." };
+  const buyer = {
+    name: rawName || "Público general",
+    email: rawEmail,
+  };
 
   const eventId = formData.get("eventId");
   if (typeof eventId !== "string") return { error: "Elegí un evento." };
@@ -72,8 +77,8 @@ export async function sellAtBoxOfficeAction(
       : "EFECTIVO";
   const created = await createPaidOrder({
     eventId,
-    buyerName: buyer.data.name,
-    buyerEmail: buyer.data.email,
+    buyerName: buyer.name,
+    buyerEmail: buyer.email,
     buyerPhone: phone,
     lines,
     now,
@@ -83,22 +88,87 @@ export async function sellAtBoxOfficeAction(
     ip: context.ip,
   });
   if ("error" in created) return created;
-  try {
-    await sendTicketEmail({
-      to: buyer.data.email,
-      eventTitle: event.title,
-      orderId: created.orderId,
-      shortCodes: created.tickets.map((ticket) => ticket.shortCode),
-    });
-  } catch (error) {
-    console.error("No se pudo enviar el email de la boletería", error);
+  if (buyer.email) {
+    try {
+      await sendTicketEmail({
+        to: buyer.email,
+        eventTitle: event.title,
+        orderId: created.orderId,
+        shortCodes: created.tickets.map((ticket) => ticket.shortCode),
+      });
+    } catch (error) {
+      console.error("No se pudo enviar el email de la boletería", error);
+    }
   }
   revalidatePath("/");
   revalidatePath(`/eventos/${event.slug}`);
-  redirect(`/boleteria/orden/${created.orderId}`);
+  revalidatePath("/admin/ventas");
+  const saleArea = formData.get("saleArea");
+  const orderPath =
+    saleArea === "admin"
+      ? `/boleteria/orden/${created.orderId}?desde=admin&evento=${eventId}`
+      : `/boleteria/orden/${created.orderId}`;
+  redirect(orderPath);
 }
 
 function numberField(value: FormDataEntryValue | null): number {
   if (typeof value !== "string" || value.trim() === "") return 0;
   return Number(value);
+}
+
+/**
+ * Marca una entrada para impresión física (térmica vía resto-kds).
+ * `fisico=true` → el otro agente la imprime y puede bajarla a false.
+ */
+export async function markTicketFisicoAction(formData: FormData): Promise<void> {
+  await requireArea("boleteria");
+  const context = await requestContext();
+  const ticketId = formData.get("ticketId");
+  const orderId = formData.get("orderId");
+  const desde = formData.get("desde");
+  const evento = formData.get("evento");
+  if (!context.originOk || typeof ticketId !== "string" || typeof orderId !== "string") {
+    return;
+  }
+
+  await db.ticket.updateMany({
+    where: { id: ticketId, orderId, status: "VALIDO" },
+    data: { fisico: true },
+  });
+
+  revalidatePath(`/boleteria/orden/${orderId}`);
+  revalidatePath(`/admin/ventas/${orderId}`);
+  redirect(orderReturnPath(orderId, desde, evento));
+}
+
+/** Marca todas las entradas válidas de la orden para impresión física. */
+export async function markOrderTicketsFisicoAction(formData: FormData): Promise<void> {
+  await requireArea("boleteria");
+  const context = await requestContext();
+  const orderId = formData.get("orderId");
+  const desde = formData.get("desde");
+  const evento = formData.get("evento");
+  if (!context.originOk || typeof orderId !== "string") return;
+
+  await db.ticket.updateMany({
+    where: { orderId, status: "VALIDO" },
+    data: { fisico: true },
+  });
+
+  revalidatePath(`/boleteria/orden/${orderId}`);
+  revalidatePath(`/admin/ventas/${orderId}`);
+  redirect(orderReturnPath(orderId, desde, evento));
+}
+
+function orderReturnPath(
+  orderId: string,
+  desde: FormDataEntryValue | null,
+  evento: FormDataEntryValue | null,
+): string {
+  if (desde === "admin") {
+    const eventQs =
+      typeof evento === "string" && evento.length > 0 ? `&evento=${evento}` : "";
+    return `/boleteria/orden/${orderId}?desde=admin${eventQs}`;
+  }
+  return `/boleteria/orden/${orderId}`;
 }

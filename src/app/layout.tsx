@@ -15,7 +15,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Boletería",
+  title: "Boletería Mendoza del oeste",
   description: "Venta y validación de entradas.",
 };
 

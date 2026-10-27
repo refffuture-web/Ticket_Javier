@@ -16,8 +16,8 @@ async function AdminHome() {
   await requireArea("admin");
   return (
     <p className="text-sm text-muted-foreground">
-      Los eventos publicados se venden en la página de inicio y en Boletería. Las ventas y
-      anulaciones están en Ventas.
+      En Ventas podés emitir entradas por evento (igual que Boletería), ver órdenes y
+      anular o reembolsar. La venta online está en la página pública de cada evento.
     </p>
   );
 }

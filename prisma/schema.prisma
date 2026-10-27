@@ -46,6 +46,20 @@ enum TicketStatus {
   ANULADO
 }
 
+enum ScanResult {
+  VALIDO
+  YA_USADO
+  ANULADO
+  OTRO_EVENTO
+  INVALIDO
+}
+
+enum ContactStatus {
+  NUEVO
+  CONTACTADO
+  ARCHIVADO
+}
+
 model User {
   id               String    @id @default(cuid())
   name             String
@@ -64,6 +78,7 @@ model User {
   auditLogs     AuditLog[]
   ordersCreated Order[]    @relation("OrderCreatedBy")
   ticketsUsed   Ticket[]   @relation("TicketUsedBy")
+  scans         TicketScan[]
 }
 
 model Session {
@@ -93,11 +108,24 @@ model Event {
   updatedAt     DateTime    @updatedAt
 
   lineup      LineupArtist[]
+  gallery     EventGalleryImage[]
   ticketTypes TicketType[]
   orders      Order[]
   tickets     Ticket[]
+  scans       TicketScan[]
 
   @@index([status, startsAt])
+}
+
+model EventGalleryImage {
+  id        String   @id @default(cuid())
+  eventId   String
+  event     Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  imageKey  String
+  sortOrder Int
+  createdAt DateTime @default(now())
+
+  @@index([eventId, sortOrder])
 }
 
 model LineupArtist {
@@ -188,12 +216,37 @@ model Ticket {
   usedById     String?
   usedBy       User?        @relation("TicketUsedBy", fields: [usedById], references: [id], onDelete: Restrict)
   printCount   Int          @default(0)
+  /** Pedido de impresión física (térmica). resto-kds imprime donde fisico=true. */
+  fisico       Boolean      @default(false)
+  /** Lo completa un trigger cuando fisico pasa a false (ver migración print_queue_rls). */
+  printedAt    DateTime?
   voidReason   String?
   voidedAt     DateTime?
   createdAt    DateTime     @default(now())
+  scans        TicketScan[]
 
   @@index([eventId, status])
   @@index([orderId])
+  @@index([fisico])
+}
+
+/** Cada intento de validación en puerta, válido o no. */
+model TicketScan {
+  id        String     @id @default(cuid())
+  eventId   String
+  event     Event      @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  ticketId  String?
+  ticket    Ticket?    @relation(fields: [ticketId], references: [id], onDelete: SetNull)
+  userId    String?
+  user      User?      @relation(fields: [userId], references: [id], onDelete: SetNull)
+  result    ScanResult
+  /** Código corto si se reconoció la entrada; si no, el inicio de lo leído. */
+  code      String?
+  createdAt DateTime   @default(now())
+
+  @@index([eventId, createdAt])
+  @@index([eventId, result])
+  @@index([ticketId])
 }
 
 model AuditLog {
@@ -210,6 +263,27 @@ model AuditLog {
   @@index([entity, entityId])
   @@index([userId, createdAt])
   @@index([createdAt])
+}
+
+/** Organizadores que piden contacto desde el formulario del home. */
+model OrganizerContact {
+  id           String        @id @default(cuid())
+  name         String
+  /** Se exige email o teléfono (al menos uno). */
+  email        String?
+  phone        String?
+  organization String?
+  city         String?
+  eventType    String?
+  eventDate    String?
+  audience     String?
+  message      String?
+  status       ContactStatus @default(NUEVO)
+  ip           String?
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  @@index([status, createdAt])
 }
 
 model WebhookEvent {

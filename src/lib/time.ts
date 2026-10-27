@@ -1,7 +1,7 @@
 export const APP_TIME_ZONE = "America/Argentina/Mendoza";
 
 export function formatDateTime(date: Date): string {
-  return new Intl.DateTimeFormat("es-AR", {
+  const parts = new Intl.DateTimeFormat("es-AR", {
     timeZone: APP_TIME_ZONE,
     day: "2-digit",
     month: "2-digit",
@@ -9,7 +9,48 @@ export function formatDateTime(date: Date): string {
     hour: "2-digit",
     minute: "2-digit",
     hourCycle: "h23",
+  }).formatToParts(date);
+  const value = Object.fromEntries(
+    parts
+      .filter((part) => part.type !== "literal")
+      .map((part) => [part.type, part.value]),
+  );
+  const hour = value.hour === "24" ? "00" : value.hour;
+  return `${value.day}/${value.month}/${value.year} · ${hour}:${value.minute}`;
+}
+
+export function formatTimeWithSeconds(date: Date): string {
+  return new Intl.DateTimeFormat("es-AR", {
+    timeZone: APP_TIME_ZONE,
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hourCycle: "h23",
   }).format(date);
+}
+
+export function formatDate(date: Date): string {
+  return formatDateTime(date).split(" · ")[0] ?? "";
+}
+
+export function formatTime(date: Date): string {
+  return formatDateTime(date).split(" · ")[1] ?? "";
+}
+
+/** Ej. "24 oct" para banners. */
+export function formatShortDate(date: Date): string {
+  const parts = new Intl.DateTimeFormat("es-AR", {
+    timeZone: APP_TIME_ZONE,
+    day: "numeric",
+    month: "short",
+  }).formatToParts(date);
+  const value = Object.fromEntries(
+    parts
+      .filter((part) => part.type !== "literal")
+      .map((part) => [part.type, part.value]),
+  );
+  const month = (value.month ?? "").replace(/\.$/, "");
+  return `${value.day} ${month}`;
 }
 
 const LOCAL_INPUT = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})(?::\d{2})?$/;

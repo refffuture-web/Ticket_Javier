@@ -11,14 +11,18 @@ const initialState: SaleState = { error: "" };
 export function SaleForm({
   eventId,
   tickets,
+  /** Tras emitir: "admin" vuelve a /admin/ventas; por defecto boletería. */
+  area = "boleteria",
 }: {
   eventId: string;
   tickets: { id: string; name: string; priceLabel: string; maxPerOrder: number }[];
+  area?: "admin" | "boleteria";
 }) {
   const [state, action, pending] = useActionState(sellAtBoxOfficeAction, initialState);
   return (
     <form action={action} className="flex max-w-xl flex-col gap-4">
       <input type="hidden" name="eventId" value={eventId} />
+      <input type="hidden" name="saleArea" value={area} />
       {tickets.map((ticket) => (
         <Field
           key={ticket.id}
@@ -30,9 +34,14 @@ export function SaleForm({
           defaultValue={0}
         />
       ))}
-      <Field label="Nombre" name="buyerName" required />
-      <Field label="Email" name="buyerEmail" type="email" required />
-      <Field label="Teléfono" name="buyerPhone" type="tel" required />
+      <Field label="Nombre (opcional)" name="buyerName" maxLength={80} />
+      <Field
+        label="Email (opcional)"
+        name="buyerEmail"
+        type="email"
+        hint="Si lo completás, se envían las entradas por correo."
+      />
+      <Field label="Teléfono (opcional)" name="buyerPhone" type="tel" />
       <label className="flex flex-col gap-1 text-sm" htmlFor="paymentMethod">
         <span className="font-medium">Pago</span>
         <select

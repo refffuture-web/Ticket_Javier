@@ -27,6 +27,12 @@ const envSchema = z.object({
   APP_SECRET: z.string().min(32),
   QR_SECRET: z.string().min(32),
   UPLOAD_DIR: optionalString,
+  /** URL del proyecto Supabase (Storage). También se puede exponer como NEXT_PUBLIC_SUPABASE_URL. */
+  SUPABASE_URL: optionalString,
+  /** Service role: solo servidor. Preferida para subir/borrar en Storage. */
+  SUPABASE_SERVICE_ROLE_KEY: optionalString,
+  /** Secreto de la edge function `media-upload` si no hay service role. */
+  SUPABASE_MEDIA_UPLOAD_SECRET: optionalString,
   ADMIN_EMAIL: optionalEmail,
   ADMIN_INITIAL_PASSWORD: optionalString,
   MP_ACCESS_TOKEN: optionalString,

@@ -5,7 +5,7 @@ import { writeAudit } from "@/server/audit";
 import { db } from "@/server/db";
 import { env } from "@/server/env";
 
-import { randomShortCode, signTicket } from "./qr";
+import { randomShortCode, signShareToken, signTicket } from "./qr";
 import { RESERVATION_MS, type SaleLineInput, selectedLines } from "./rules";
 import {
   confirmReservedSeats,
@@ -327,6 +327,10 @@ export async function refundOrder(input: {
 
 export function ticketToken(ticketId: string): string {
   return signTicket(ticketId, env.QR_SECRET);
+}
+
+export function ticketShareUrl(ticketId: string): string {
+  return `${env.APP_URL}/entrada/${signShareToken(ticketId, env.QR_SECRET)}`;
 }
 
 async function issueTickets(

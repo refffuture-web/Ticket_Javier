@@ -17,9 +17,10 @@ export function securityHeaders(isProduction: boolean): SecurityHeader[] {
         "default-src 'self'",
         scriptSrc,
         "style-src 'self' 'unsafe-inline'",
-        "img-src 'self' data: blob:",
+        // Fotos viven en Supabase Storage (CDN); sin esto el navegador las bloquea.
+        "img-src 'self' data: blob: https://*.supabase.co",
         "font-src 'self'",
-        "connect-src 'self'",
+        "connect-src 'self' https://*.supabase.co",
         "frame-ancestors 'none'",
         "base-uri 'self'",
         "form-action 'self'",

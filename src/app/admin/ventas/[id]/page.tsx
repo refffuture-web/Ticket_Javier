@@ -53,8 +53,15 @@ async function OrderAdmin({
       <div>
         <h2 className="text-lg font-medium">{order.buyerName}</h2>
         <p className="text-sm text-muted-foreground">
-          {order.event.title} · {order.status} · {order.buyerEmail} · {order.buyerPhone} ·{" "}
-          {formatArs(order.totalCents)}
+          {[
+            order.event.title,
+            order.status,
+            order.buyerEmail,
+            order.buyerPhone,
+            formatArs(order.totalCents),
+          ]
+            .filter(Boolean)
+            .join(" · ")}
         </p>
         {notice ? <p className="mt-2 text-sm">{notice}</p> : null}
       </div>
@@ -92,9 +99,23 @@ async function OrderAdmin({
           </li>
         ))}
       </ul>
-      <Link href="/admin/ventas" className="text-sm underline-offset-4 hover:underline">
-        Volver a ventas
-      </Link>
+      <div className="flex flex-wrap gap-4 text-sm">
+        <Link
+          href={`/admin/ventas?evento=${order.eventId}`}
+          className="underline-offset-4 hover:underline"
+        >
+          Volver a ventas del evento
+        </Link>
+        {(order.origin === "BOLETERIA" || order.origin === "CORTESIA") &&
+        order.status === "PAGADA" ? (
+          <Link
+            href={`/boleteria/orden/${order.id}?desde=admin&evento=${order.eventId}`}
+            className="underline-offset-4 hover:underline"
+          >
+            Ver QR / imprimir
+          </Link>
+        ) : null}
+      </div>
     </div>
   );
 }

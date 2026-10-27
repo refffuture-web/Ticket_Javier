@@ -2,7 +2,7 @@ import { headers } from "next/headers";
 
 import { env } from "@/server/env";
 
-import { sameOrigin } from "./origin";
+import { originAllowed } from "./origin";
 
 export async function requestContext(): Promise<{
   ip: string;
@@ -15,6 +15,11 @@ export async function requestContext(): Promise<{
   return {
     ip: ip.length > 0 ? ip : "desconocida",
     userAgent: headerStore.get("user-agent"),
-    originOk: sameOrigin(headerStore.get("origin"), env.APP_URL),
+    originOk: originAllowed(
+      headerStore.get("origin"),
+      env.APP_URL,
+      headerStore.get("x-forwarded-host") ?? headerStore.get("host"),
+      headerStore.get("x-forwarded-proto"),
+    ),
   };
 }

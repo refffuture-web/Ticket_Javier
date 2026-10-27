@@ -4,6 +4,7 @@ import { useActionState } from "react";
 
 import {
   addArtistAction,
+  addGalleryImagesAction,
   createEventAction,
   createTicketTypeAction,
   saveCoverAction,
@@ -13,6 +14,7 @@ import {
   updateTicketTypeAction,
   type EventFormState,
 } from "@/app/admin/eventos/actions";
+import { DateTimeFields } from "@/components/datetime-fields";
 import { Field, FormMessage, TextArea } from "@/components/field";
 import { Button } from "@/components/ui/button";
 import type { EventStatusName } from "@/server/events/event-rules";
@@ -68,13 +70,13 @@ export function EventDetailsForm({
         required
         maxLength={4000}
       />
-      <Field
-        label="Fecha y hora"
+      <DateTimeFields
         name="startsAt"
-        type="datetime-local"
+        dateLabel="Fecha"
+        timeLabel="Horario"
         defaultValue={event?.startsAt}
         required
-        hint="Horario de Mendoza."
+        hint="Día, mes y año, y después el horario (Mendoza)."
       />
       <Field
         label="Lugar"
@@ -107,6 +109,28 @@ export function CoverForm({ eventId }: { eventId: string }) {
       <Feedback state={state} />
       <Button type="submit" disabled={pending}>
         {pending ? "Subiendo…" : "Subir portada"}
+      </Button>
+    </form>
+  );
+}
+
+export function GalleryUploadForm({ eventId }: { eventId: string }) {
+  const [state, action, pending] = useActionState(addGalleryImagesAction, initialState);
+  return (
+    <form action={action} className="flex flex-col gap-4">
+      <input type="hidden" name="eventId" value={eventId} />
+      <Field
+        label="Fotos de la galería"
+        name="gallery"
+        type="file"
+        accept="image/jpeg,image/png,image/webp"
+        multiple
+        hint="Podés elegir varias. JPG, PNG o WebP. Máximo 5 MB cada una. Hasta 12 en total."
+        required
+      />
+      <Feedback state={state} />
+      <Button type="submit" disabled={pending}>
+        {pending ? "Subiendo…" : "Agregar a la galería"}
       </Button>
     </form>
   );
@@ -222,12 +246,12 @@ function ArtistFields({
         required
         maxLength={80}
       />
-      <Field
-        label="Horario en escena"
+      <DateTimeFields
         name="startsAt"
-        type="datetime-local"
+        dateLabel="Fecha en escena"
+        timeLabel="Horario en escena"
         defaultValue={artist?.startsAt}
-        hint="Opcional. Horario de Mendoza."
+        hint="Opcional. Día, mes y año, y después el horario (Mendoza)."
       />
       <Field
         label="Instagram"
@@ -351,17 +375,17 @@ function TicketFields({
         defaultValue={ticketType?.maxPerOrder ?? 4}
         required
       />
-      <Field
-        label="Inicio de venta"
+      <DateTimeFields
         name="saleStartsAt"
-        type="datetime-local"
+        dateLabel="Inicio de venta — fecha"
+        timeLabel="Inicio de venta — horario"
         defaultValue={ticketType?.saleStartsAt}
-        hint="Opcional. Horario de Mendoza."
+        hint="Opcional. Día, mes y año, y después el horario (Mendoza)."
       />
-      <Field
-        label="Fin de venta"
+      <DateTimeFields
         name="saleEndsAt"
-        type="datetime-local"
+        dateLabel="Fin de venta — fecha"
+        timeLabel="Fin de venta — horario"
         defaultValue={ticketType?.saleEndsAt}
       />
       <label className="flex items-center gap-2 text-sm">

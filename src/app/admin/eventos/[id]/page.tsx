@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 
 import {
   deleteArtistAction,
+  deleteGalleryImageAction,
   deleteTicketTypeAction,
   moveArtistAction,
 } from "@/app/admin/eventos/actions";
@@ -13,10 +14,12 @@ import {
   ArtistEditor,
   CoverForm,
   EventDetailsForm,
+  GalleryUploadForm,
   StatusActions,
   TicketTypeEditor,
 } from "@/app/admin/eventos/event-forms";
 import { Button } from "@/components/ui/button";
+import { mediaUrl } from "@/lib/media-url";
 import { formatArs, formatArsInput } from "@/lib/money";
 import { utcToMendozaLocalInput } from "@/lib/time";
 import { requireArea } from "@/server/auth/guard";
@@ -33,6 +36,7 @@ export const instant = false;
 const notices: Record<string, string> = {
   artista: "Artista quitado.",
   tipo: "Tipo de entrada borrado.",
+  galeria: "Foto quitada de la galería.",
   cupo: "No se puede borrar: ya tiene ventas o reservas. Desactivalo.",
   accion: "No se pudo completar la acción.",
 };
@@ -65,6 +69,7 @@ async function EventEditor({
     where: { id },
     include: {
       lineup: { orderBy: [{ sortOrder: "asc" }, { name: "asc" }] },
+      gallery: { orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }] },
       ticketTypes: { orderBy: { createdAt: "asc" } },
     },
   });
@@ -80,6 +85,16 @@ async function EventEditor({
           {STATUS_LABEL[event.status]} · /{event.slug}
         </p>
         {notice ? <p className="text-sm text-muted-foreground">{notice}</p> : null}
+        {event.status === "PUBLICADO" ? (
+          <p className="text-sm">
+            <Link
+              href={`/admin/ventas?evento=${event.id}`}
+              className="underline-offset-4 hover:underline"
+            >
+              Vender entradas (boletería)
+            </Link>
+          </p>
+        ) : null}
       </div>
 
       <section className="flex flex-col gap-3">
@@ -111,7 +126,7 @@ async function EventEditor({
           // La portada sale de una ruta propia; next/image no aplica a ese archivo generado.
           // eslint-disable-next-line @next/next/no-img-element
           <img
-            src={`/api/media/${event.coverImageKey}`}
+            src={mediaUrl(event.coverImageKey)!}
             alt=""
             className="max-h-64 w-full rounded-lg object-cover"
           />
@@ -119,6 +134,40 @@ async function EventEditor({
           <p className="text-sm text-muted-foreground">Sin portada.</p>
         )}
         {editable ? <CoverForm eventId={event.id} /> : null}
+      </section>
+
+      <section className="flex max-w-3xl flex-col gap-3">
+        <h3 className="font-medium">Galería del evento</h3>
+        <p className="text-sm text-muted-foreground">
+          Estas fotos se muestran en el home debajo del banner. No son la grilla
+          de artistas.
+        </p>
+        {event.gallery.length === 0 ? (
+          <p className="text-sm text-muted-foreground">Todavía no hay fotos.</p>
+        ) : (
+          <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+            {event.gallery.map((photo) => (
+              <li key={photo.id} className="flex flex-col gap-2">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={mediaUrl(photo.imageKey)!}
+                  alt=""
+                  className="aspect-square w-full rounded-lg object-cover"
+                />
+                {editable ? (
+                  <form action={deleteGalleryImageAction}>
+                    <input type="hidden" name="eventId" value={event.id} />
+                    <input type="hidden" name="imageId" value={photo.id} />
+                    <Button type="submit" variant="outline" size="sm">
+                      Quitar
+                    </Button>
+                  </form>
+                ) : null}
+              </li>
+            ))}
+          </ul>
+        )}
+        {editable ? <GalleryUploadForm eventId={event.id} /> : null}
       </section>
 
       <section className="flex flex-col gap-4">
@@ -160,7 +209,7 @@ async function EventEditor({
                   {artist.photoKey ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img
-                      src={`/api/media/${artist.photoKey}`}
+                      src={mediaUrl(artist.photoKey)!}
                       alt=""
                       className="h-24 w-24 rounded-lg object-cover"
                     />

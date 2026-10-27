@@ -29,6 +29,7 @@ const rejected = "No se pudo completar la acción";
 function refreshEvent(eventId: string) {
   revalidatePath(`/admin/eventos/${eventId}`);
   revalidatePath("/admin/eventos");
+  revalidatePath("/");
 }
 const httpUrl = z.url().refine((value) => /^https?:\/\//.test(value));
 
@@ -247,6 +248,98 @@ export async function saveCoverAction(
   });
   refreshEvent(event.id);
   return { error: "", ok: "Portada actualizada" };
+}
+
+const MAX_GALLERY_IMAGES = 12;
+
+export async function addGalleryImagesAction(
+  _state: EventFormState,
+  formData: FormData,
+): Promise<EventFormState> {
+  const auth = await authorized();
+  if ("error" in auth) return { error: auth.error, ok: "" };
+  const event = await editableEvent(formData.get("eventId"));
+  if ("error" in event) return { error: event.error ?? rejected, ok: "" };
+
+  const files = formData
+    .getAll("gallery")
+    .filter((entry): entry is File => entry instanceof File && entry.size > 0);
+  if (files.length === 0) {
+    return { error: "Elegí una o más imágenes JPG, PNG o WebP.", ok: "" };
+  }
+
+  const existing = await db.eventGalleryImage.count({ where: { eventId: event.id } });
+  if (existing + files.length > MAX_GALLERY_IMAGES) {
+    return {
+      error: `Podés subir hasta ${MAX_GALLERY_IMAGES} fotos en la galería.`,
+      ok: "",
+    };
+  }
+
+  const last = await db.eventGalleryImage.findFirst({
+    where: { eventId: event.id },
+    orderBy: { sortOrder: "desc" },
+    select: { sortOrder: true },
+  });
+  let sortOrder = (last?.sortOrder ?? -1) + 1;
+  let saved = 0;
+
+  for (const file of files) {
+    const image = await storeImage(file);
+    if (!image) continue;
+    if ("error" in image) return { error: image.error, ok: "" };
+    await db.eventGalleryImage.create({
+      data: { eventId: event.id, imageKey: image.key, sortOrder },
+    });
+    sortOrder += 1;
+    saved += 1;
+  }
+
+  if (saved === 0) return { error: "Elegí una o más imágenes JPG, PNG o WebP.", ok: "" };
+
+  await writeAudit({
+    userId: auth.userId,
+    action: "event.gallery.add",
+    entity: "Event",
+    entityId: event.id,
+    metadata: { count: saved },
+    ip: auth.ip,
+  });
+  refreshEvent(event.id);
+  return {
+    error: "",
+    ok: saved === 1 ? "Foto agregada a la galería" : `${saved} fotos agregadas`,
+  };
+}
+
+export async function deleteGalleryImageAction(
+  formData: FormData,
+): Promise<void> {
+  const auth = await authorized();
+  const eventId = formData.get("eventId");
+  const imageId = formData.get("imageId");
+  if ("error" in auth || typeof eventId !== "string" || typeof imageId !== "string") {
+    redirect(back(typeof eventId === "string" ? eventId : "", "accion"));
+  }
+  const event = await editableEvent(eventId);
+  if ("error" in event) redirect(back(eventId, "accion"));
+
+  const image = await db.eventGalleryImage.findFirst({
+    where: { id: imageId, eventId: event.id },
+  });
+  if (!image) redirect(back(eventId, "accion"));
+
+  await db.eventGalleryImage.delete({ where: { id: image.id } });
+  await storage.delete(image.imageKey);
+  await writeAudit({
+    userId: auth.userId,
+    action: "event.gallery.delete",
+    entity: "EventGalleryImage",
+    entityId: image.id,
+    ip: auth.ip,
+  });
+  refreshEvent(eventId);
+  redirect(back(eventId, "galeria"));
 }
 
 export async function addArtistAction(
